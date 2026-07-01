@@ -2,6 +2,10 @@
 <project name="dita2googledoc">
 
   <target name="dita2googledoc.init">
+    <property name="googledoc.credentials" value=""/>
+    <property name="googledoc.auth.type" value="auto"/>
+    <property name="googledoc.doc.id" value=""/>
+    <property name="googledoc.folder.id" value=""/>
     <property name="googledoc.image.max.width" value="468"/>
     <property name="googledoc.token.dir"
               value="${user.home}/.dita-googledoc/tokens"/>

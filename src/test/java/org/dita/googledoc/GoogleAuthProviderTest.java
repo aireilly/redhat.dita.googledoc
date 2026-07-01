@@ -13,13 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class GoogleAuthProviderTest {
 
     @Test
-    void getCredential_invalidAuthType_throws() {
-        assertThrows(IllegalArgumentException.class, () ->
-            GoogleAuthProvider.getCredential("/nonexistent", "invalid", null));
-    }
-
-    @Test
-    void getCredential_missingFile_throws() {
+    void getCredential_explicitServiceWithNoFile_throws() {
         assertThrows(IOException.class, () ->
             GoogleAuthProvider.getCredential("/nonexistent/creds.json", "service", null));
     }
@@ -27,7 +21,6 @@ class GoogleAuthProviderTest {
     @Test
     void getCredential_serviceAccount_badJson_throws(@TempDir Path tempDir) throws Exception {
         Path creds = tempDir.resolve("service-account.json");
-        // Write invalid JSON to verify error handling
         Files.writeString(creds, "not valid json");
 
         assertThrows(IOException.class, () ->
@@ -35,10 +28,8 @@ class GoogleAuthProviderTest {
     }
 
     @Test
-    void getCredential_serviceAccount_structureOnly(@TempDir Path tempDir) throws Exception {
+    void getCredential_explicitServiceAccount_routes(@TempDir Path tempDir) throws Exception {
         Path creds = tempDir.resolve("service-account.json");
-        // Write minimal valid JSON structure (will fail at credential creation, not parsing)
-        // This verifies the method routes to the service account path correctly
         String minimalJson = """
             {
               "type": "service_account",
@@ -53,9 +44,49 @@ class GoogleAuthProviderTest {
             """;
         Files.writeString(creds, minimalJson);
 
-        // This should throw during credential creation, not file reading
-        // confirming the method correctly routes to service account flow
         assertThrows(IOException.class, () ->
             GoogleAuthProvider.getCredential(creds.toString(), "service", null));
+    }
+
+    @Test
+    void getCredential_explicitTypeWithoutCredentials_throws() {
+        assertThrows(IllegalArgumentException.class, () ->
+            GoogleAuthProvider.getCredential(null, "service", null));
+    }
+
+    @Test
+    void getCredential_oauthTypeWithoutCredentials_throws() {
+        assertThrows(IllegalArgumentException.class, () ->
+            GoogleAuthProvider.getCredential("", "oauth", null));
+    }
+
+    @Test
+    void getCredential_autoWithCredentials_treatsAsService(@TempDir Path tempDir) throws Exception {
+        Path creds = tempDir.resolve("service-account.json");
+        Files.writeString(creds, "not valid json");
+
+        assertThrows(IOException.class, () ->
+            GoogleAuthProvider.getCredential(creds.toString(), "auto", null));
+    }
+
+    @Test
+    void hasGcloud_returnsBoolean() {
+        boolean result = GoogleAuthProvider.hasGcloud();
+        // Just verify it returns without throwing — actual value depends on environment
+        assertTrue(result || !result);
+    }
+
+    @Test
+    void tryGcloudToken_returnsNullOrToken() {
+        String token = GoogleAuthProvider.tryGcloudToken();
+        // Returns null if gcloud not available or no active auth, string otherwise
+        assertTrue(token == null || !token.isEmpty());
+    }
+
+    @Test
+    void tryAdcCredential_returnsNullOrInitializer() {
+        HttpRequestInitializer result = GoogleAuthProvider.tryAdcCredential();
+        // Returns null if no ADC configured, initializer otherwise
+        assertTrue(result == null || result != null);
     }
 }

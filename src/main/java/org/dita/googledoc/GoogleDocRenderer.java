@@ -21,17 +21,17 @@ public class GoogleDocRenderer {
     public record TopicRef(String href, int depth) {}
 
     public static void main(String[] args) {
-        if (args.length < 4) {
+        if (args.length < 2) {
             System.err.println(
-                "Usage: GoogleDocRenderer <tempDir> <inputMap> <credentials> <authType> " +
+                "Usage: GoogleDocRenderer <tempDir> <inputMap> [credentials] [authType] " +
                 "[docId] [folderId] [tokenDir] [imageMaxWidth]");
             System.exit(1);
         }
 
         String tempDir = args[0];
         String inputMap = args[1];
-        String credentialsPath = args[2];
-        String authType = args[3];
+        String credentialsPath = args.length > 2 && !args[2].isEmpty() ? args[2] : null;
+        String authType = args.length > 3 && !args[3].isEmpty() ? args[3] : "auto";
         String docId = args.length > 4 && !args[4].isEmpty() ? args[4] : null;
         String folderId = args.length > 5 && !args[5].isEmpty() ? args[5] : null;
         String tokenDir = args.length > 6 && !args[6].isEmpty() ? args[6] : null;

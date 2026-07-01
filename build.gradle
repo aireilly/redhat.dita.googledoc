@@ -2,7 +2,7 @@ plugins {
     id 'java'
 }
 
-group = 'org.dita'
+group = 'com.redhat.dita'
 version = '1.0.0'
 
 java {
@@ -39,7 +39,7 @@ tasks.register('copyDeps', Copy) {
 
 tasks.register('bundlePlugin', Zip) {
     dependsOn 'jar', 'copyDeps'
-    archiveBaseName = 'org.dita.googledoc'
+    archiveBaseName = 'redhat.dita.googledoc'
     from('.') {
         include 'plugin.xml'
         include 'build.xml'

@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<plugin id="org.dita.googledoc">
+<plugin id="redhat.dita.googledoc">
   <require plugin="org.dita.base"/>
 
-  <feature extension="dita.conductor.lib.import" file="lib/org.dita.googledoc-1.0.0.jar"/>
+  <feature extension="dita.conductor.lib.import" file="lib/redhat.dita.googledoc-1.0.0.jar"/>
   <feature extension="ant.import" file="build.xml"/>
 
   <transtype name="googledoc" desc="Google Docs output">
     <param name="googledoc.credentials"
            type="file"
-           desc="Path to Google credentials JSON (service account or OAuth client)"
-           required="true"/>
+           desc="Path to Google credentials JSON (service account or OAuth client). Optional — if omitted, authenticates via gcloud CLI or Application Default Credentials."/>
     <param name="googledoc.auth.type"
            type="enum"
            desc="Authentication type">
-      <val default="true">service</val>
+      <val default="true">auto</val>
+      <val>service</val>
       <val>oauth</val>
     </param>
     <param name="googledoc.doc.id"
