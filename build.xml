@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="dita2googledoc">
+
+  <target name="dita2googledoc.init">
+    <property name="googledoc.image.max.width" value="468"/>
+    <property name="googledoc.token.dir"
+              value="${user.home}/.dita-googledoc/tokens"/>
+  </target>
+
+  <target name="dita2googledoc"
+          depends="build-init,preprocess2,dita2googledoc.init">
+    <java classname="org.dita.googledoc.GoogleDocRenderer"
+          classpathref="dost.class.path"
+          failonerror="true"
+          fork="true">
+      <arg value="${dita.temp.dir}"/>
+      <arg value="${args.input}"/>
+      <arg value="${googledoc.credentials}"/>
+      <arg value="${googledoc.auth.type}"/>
+      <arg value="${googledoc.doc.id}"/>
+      <arg value="${googledoc.folder.id}"/>
+      <arg value="${googledoc.token.dir}"/>
+      <arg value="${googledoc.image.max.width}"/>
+    </java>
+  </target>
+
+</project>

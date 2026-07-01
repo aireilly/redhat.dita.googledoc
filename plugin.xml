@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<plugin id="org.dita.googledoc">
+  <require plugin="org.dita.base"/>
+
+  <feature extension="dita.conductor.lib.import" file="lib/org.dita.googledoc-1.0.0.jar"/>
+  <feature extension="ant.import" file="build.xml"/>
+
+  <transtype name="googledoc" desc="Google Docs output">
+    <param name="googledoc.credentials"
+           type="file"
+           desc="Path to Google credentials JSON (service account or OAuth client)"
+           required="true"/>
+    <param name="googledoc.auth.type"
+           type="enum"
+           desc="Authentication type">
+      <val default="true">service</val>
+      <val>oauth</val>
+    </param>
+    <param name="googledoc.doc.id"
+           type="string"
+           desc="Existing Google Doc ID to update (creates new if omitted)"/>
+    <param name="googledoc.folder.id"
+           type="string"
+           desc="Google Drive folder ID for new docs"/>
+    <param name="googledoc.token.dir"
+           type="string"
+           desc="OAuth token storage directory"/>
+    <param name="googledoc.image.max.width"
+           type="string"
+           desc="Max image width in points (default: 468)"/>
+  </transtype>
+</plugin>
