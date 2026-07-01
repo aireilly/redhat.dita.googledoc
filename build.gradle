@@ -15,7 +15,7 @@ repositories {
 }
 
 dependencies {
-    compileOnly 'org.dita-ot:dost:4.2.0'
+    compileOnly 'org.dita-ot:dost:4.3.0'
 
     implementation 'com.google.api-client:google-api-client:2.9.0'
     implementation 'com.google.apis:google-api-services-docs:v1-rev20260427-2.0.0'
