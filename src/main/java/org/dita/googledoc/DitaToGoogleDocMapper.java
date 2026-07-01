@@ -255,11 +255,11 @@ public class DitaToGoogleDocMapper {
                 }
             }
             if (r < rows - 1) {
-                currentIndex += 2;
+                currentIndex += 3;
             }
         }
 
-        currentIndex += 1;
+        currentIndex += 2;
     }
 
     private void collectRows(Element parent, List<List<String>> cellContents) {

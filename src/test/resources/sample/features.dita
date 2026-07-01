@@ -6,42 +6,143 @@
       <title>Content Support</title>
       <p>The plugin supports the following content types:</p>
       <table>
-        <tgroup cols="2">
+        <tgroup cols="3">
           <thead>
             <row>
               <entry>Element</entry>
               <entry>Rendering</entry>
+              <entry>Notes</entry>
             </row>
           </thead>
           <tbody>
             <row>
               <entry>topic/title</entry>
-              <entry>Google Docs heading</entry>
+              <entry>Google Docs heading (H1-H6)</entry>
+              <entry>Depth-based heading levels</entry>
             </row>
             <row>
               <entry>p</entry>
               <entry>Normal paragraph</entry>
+              <entry>With inline formatting</entry>
             </row>
             <row>
               <entry>codeblock</entry>
-              <entry>Monospace text</entry>
+              <entry>Monospace text block</entry>
+              <entry>Courier New font</entry>
+            </row>
+            <row>
+              <entry>table</entry>
+              <entry>Google Docs table</entry>
+              <entry>CALS model support</entry>
+            </row>
+            <row>
+              <entry>ul/ol</entry>
+              <entry>Bulleted/numbered lists</entry>
+              <entry>Nested list support</entry>
+            </row>
+            <row>
+              <entry>dl</entry>
+              <entry>Definition list</entry>
+              <entry>Bold term, indented definition</entry>
+            </row>
+            <row>
+              <entry>note</entry>
+              <entry>Prefixed callout</entry>
+              <entry>Tip, Warning, Important, etc.</entry>
+            </row>
+            <row>
+              <entry>xref</entry>
+              <entry>Hyperlink</entry>
+              <entry>External links supported</entry>
             </row>
           </tbody>
         </tgroup>
       </table>
     </section>
+
     <section>
-      <title>Authentication</title>
+      <title>Authentication Methods</title>
+      <p>The plugin supports a cascading authentication strategy:</p>
       <dl>
         <dlentry>
+          <dt>gcloud CLI</dt>
+          <dd>Uses your existing <codeph>gcloud auth</codeph> session.
+          This is the <b>preferred</b> method — no files needed.</dd>
+        </dlentry>
+        <dlentry>
+          <dt>Application Default Credentials</dt>
+          <dd>Honors the <codeph>GOOGLE_APPLICATION_CREDENTIALS</codeph>
+          environment variable or credentials set via
+          <codeph>gcloud auth application-default login</codeph>.</dd>
+        </dlentry>
+        <dlentry>
+          <dt>Interactive Login</dt>
+          <dd>If gcloud is installed but no session is active, the plugin
+          opens a browser for Google sign-in.</dd>
+        </dlentry>
+        <dlentry>
           <dt>Service Account</dt>
-          <dd>For CI/CD pipelines and automated builds.</dd>
+          <dd>For CI/CD pipelines and automated builds. Pass a JSON key
+          file with <codeph>--googledoc.credentials</codeph>.</dd>
         </dlentry>
         <dlentry>
           <dt>OAuth 2.0</dt>
-          <dd>For interactive local usage with browser consent.</dd>
+          <dd>For interactive local usage with browser consent and
+          refresh token persistence.</dd>
         </dlentry>
       </dl>
     </section>
+
+    <section>
+      <title>Configuration Parameters</title>
+      <table>
+        <tgroup cols="4">
+          <thead>
+            <row>
+              <entry>Parameter</entry>
+              <entry>Required</entry>
+              <entry>Default</entry>
+              <entry>Description</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry>googledoc.credentials</entry>
+              <entry>No</entry>
+              <entry>-</entry>
+              <entry>Path to Google credentials JSON file</entry>
+            </row>
+            <row>
+              <entry>googledoc.auth.type</entry>
+              <entry>No</entry>
+              <entry>auto</entry>
+              <entry>Authentication type: auto, service, or oauth</entry>
+            </row>
+            <row>
+              <entry>googledoc.doc.id</entry>
+              <entry>No</entry>
+              <entry>-</entry>
+              <entry>Existing document ID to update</entry>
+            </row>
+            <row>
+              <entry>googledoc.folder.id</entry>
+              <entry>No</entry>
+              <entry>-</entry>
+              <entry>Drive folder ID for new documents</entry>
+            </row>
+            <row>
+              <entry>googledoc.image.max.width</entry>
+              <entry>No</entry>
+              <entry>468</entry>
+              <entry>Maximum image width in points</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+    </section>
+
+    <note type="caution">When using service account authentication, ensure
+    the service account has been granted access to the target Google Drive
+    folder.</note>
   </body>
 </topic>

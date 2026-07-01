@@ -3,17 +3,58 @@
   <title>Introduction</title>
   <body>
     <p>This is a <b>sample</b> document that demonstrates the
-    <codeph>googledoc</codeph> output format.</p>
-    <p>It includes <i>various</i> DITA elements to verify rendering.</p>
-    <note type="tip">This plugin converts DITA to Google Docs automatically.</note>
-    <ul>
-      <li>Headings and paragraphs</li>
-      <li>Bold, italic, and monospace text</li>
-      <li>Lists and tables</li>
-    </ul>
-    <codeblock>dita --input=mymap.ditamap --format=googledoc \
-  --googledoc.credentials=creds.json</codeblock>
+    <codeph>googledoc</codeph> output format for the
+    <codeph>redhat.dita.googledoc</codeph> plugin.</p>
+    <p>It includes <i>various</i> DITA elements to verify rendering.
+    Here is some <b>bold text</b>, <i>italic text</i>,
+    <b><i>bold-italic text</i></b>, and <codeph>monospace code</codeph>.</p>
+
+    <note type="tip">This plugin converts DITA to Google Docs automatically
+    using the cascading auth pattern.</note>
+    <note type="warning">Always ensure your Google Cloud project has the
+    Docs API and Drive API enabled before running the plugin.</note>
+    <note type="important">The plugin requires Java 17 or later.</note>
+
+    <section>
+      <title>Unordered List</title>
+      <ul>
+        <li>Headings and paragraphs</li>
+        <li><b>Bold</b>, <i>italic</i>, and <codeph>monospace</codeph> text</li>
+        <li>Lists (ordered and unordered) and tables</li>
+        <li>Code blocks with syntax preservation</li>
+      </ul>
+    </section>
+
+    <section>
+      <title>Ordered List</title>
+      <ol>
+        <li>Install the DITA Open Toolkit</li>
+        <li>Build the plugin with <codeph>./gradlew bundlePlugin</codeph></li>
+        <li>Install the plugin using <codeph>dita install</codeph></li>
+        <li>Run the transformation</li>
+      </ol>
+    </section>
+
+    <section>
+      <title>Code Block</title>
+      <p>Here is a command-line example:</p>
+      <codeblock>dita --input=mymap.ditamap --format=googledoc \
+  --googledoc.auth.type=auto
+
+# With explicit credentials:
+dita --input=mymap.ditamap --format=googledoc \
+  --googledoc.auth.type=service \
+  --googledoc.credentials=/path/to/service-account.json</codeblock>
+      <p>And here is a Java code snippet:</p>
+      <codeblock>HttpRequestInitializer credential =
+    GoogleAuthProvider.getCredential(null, "auto", null);
+GoogleDocApiClient client = new GoogleDocApiClient(credential);
+String docId = client.createDocument("My Document", folderId);</codeblock>
+    </section>
+
     <p>See <xref href="https://www.dita-ot.org" format="html"
-    scope="external">DITA-OT</xref> for more information.</p>
+    scope="external">DITA-OT</xref> for more information, or visit
+    the <xref href="https://developers.google.com/docs/api" format="html"
+    scope="external">Google Docs API documentation</xref>.</p>
   </body>
 </topic>
