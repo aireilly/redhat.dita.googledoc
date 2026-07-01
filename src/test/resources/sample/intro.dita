@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<topic id="intro">
+  <title>Introduction</title>
+  <body>
+    <p>This is a <b>sample</b> document that demonstrates the
+    <codeph>googledoc</codeph> output format.</p>
+    <p>It includes <i>various</i> DITA elements to verify rendering.</p>
+    <note type="tip">This plugin converts DITA to Google Docs automatically.</note>
+    <ul>
+      <li>Headings and paragraphs</li>
+      <li>Bold, italic, and monospace text</li>
+      <li>Lists and tables</li>
+    </ul>
+    <codeblock>dita --input=mymap.ditamap --format=googledoc \
+  --googledoc.credentials=creds.json</codeblock>
+    <p>See <xref href="https://www.dita-ot.org" format="html"
+    scope="external">DITA-OT</xref> for more information.</p>
+  </body>
+</topic>

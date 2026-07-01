@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<topic id="features">
+  <title>Features</title>
+  <body>
+    <section>
+      <title>Content Support</title>
+      <p>The plugin supports the following content types:</p>
+      <table>
+        <tgroup cols="2">
+          <thead>
+            <row>
+              <entry>Element</entry>
+              <entry>Rendering</entry>
+            </row>
+          </thead>
+          <tbody>
+            <row>
+              <entry>topic/title</entry>
+              <entry>Google Docs heading</entry>
+            </row>
+            <row>
+              <entry>p</entry>
+              <entry>Normal paragraph</entry>
+            </row>
+            <row>
+              <entry>codeblock</entry>
+              <entry>Monospace text</entry>
+            </row>
+          </tbody>
+        </tgroup>
+      </table>
+    </section>
+    <section>
+      <title>Authentication</title>
+      <dl>
+        <dlentry>
+          <dt>Service Account</dt>
+          <dd>For CI/CD pipelines and automated builds.</dd>
+        </dlentry>
+        <dlentry>
+          <dt>OAuth 2.0</dt>
+          <dd>For interactive local usage with browser consent.</dd>
+        </dlentry>
+      </dl>
+    </section>
+  </body>
+</topic>

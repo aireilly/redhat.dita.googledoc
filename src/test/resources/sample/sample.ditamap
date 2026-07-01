@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<map>
+  <title>Sample Google Doc Output</title>
+  <topicref href="intro.dita">
+    <topicref href="features.dita"/>
+  </topicref>
+</map>
