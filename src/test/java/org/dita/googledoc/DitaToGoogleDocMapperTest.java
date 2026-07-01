@@ -317,6 +317,226 @@ class DitaToGoogleDocMapperTest {
     }
 
     @Test
+    void mapTopic_nestedUnorderedList() throws Exception {
+        Document doc = parseXml("""
+            <topic id="t1">
+              <title>T</title>
+              <body>
+                <ul>
+                  <li>Parent item
+                    <ul>
+                      <li>Nested item</li>
+                    </ul>
+                  </li>
+                </ul>
+              </body>
+            </topic>
+            """);
+
+        List<Request> requests = mapper.mapTopic(doc, 0);
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("Parent item")));
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("Nested item")));
+
+        long bulletCount = requests.stream().filter(r ->
+            r.getCreateParagraphBullets() != null &&
+            "BULLET_DISC_CIRCLE_SQUARE".equals(
+                r.getCreateParagraphBullets().getBulletPreset())).count();
+        assertEquals(2, bulletCount);
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getUpdateParagraphStyle() != null &&
+            r.getUpdateParagraphStyle().getParagraphStyle().getIndentStart() != null &&
+            r.getUpdateParagraphStyle().getParagraphStyle().getIndentStart()
+                .getMagnitude() == 36.0));
+    }
+
+    @Test
+    void mapTopic_nestedOrderedList() throws Exception {
+        Document doc = parseXml("""
+            <topic id="t1">
+              <title>T</title>
+              <body>
+                <ol>
+                  <li>Parent step
+                    <ol>
+                      <li>Nested step</li>
+                    </ol>
+                  </li>
+                </ol>
+              </body>
+            </topic>
+            """);
+
+        List<Request> requests = mapper.mapTopic(doc, 0);
+
+        long numberedCount = requests.stream().filter(r ->
+            r.getCreateParagraphBullets() != null &&
+            "NUMBERED_DECIMAL_ALPHA_ROMAN".equals(
+                r.getCreateParagraphBullets().getBulletPreset())).count();
+        assertEquals(2, numberedCount);
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getUpdateParagraphStyle() != null &&
+            r.getUpdateParagraphStyle().getParagraphStyle().getIndentStart() != null &&
+            r.getUpdateParagraphStyle().getParagraphStyle().getIndentStart()
+                .getMagnitude() == 36.0));
+    }
+
+    @Test
+    void mapTopic_mixedNestedList() throws Exception {
+        Document doc = parseXml("""
+            <topic id="t1">
+              <title>T</title>
+              <body>
+                <ul>
+                  <li>Bullet parent
+                    <ol>
+                      <li>Numbered nested</li>
+                    </ol>
+                  </li>
+                </ul>
+              </body>
+            </topic>
+            """);
+
+        List<Request> requests = mapper.mapTopic(doc, 0);
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getCreateParagraphBullets() != null &&
+            "BULLET_DISC_CIRCLE_SQUARE".equals(
+                r.getCreateParagraphBullets().getBulletPreset())));
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getCreateParagraphBullets() != null &&
+            "NUMBERED_DECIMAL_ALPHA_ROMAN".equals(
+                r.getCreateParagraphBullets().getBulletPreset())));
+    }
+
+    @Test
+    void mapTopic_paragraphInsideListItem() throws Exception {
+        Document doc = parseXml("""
+            <topic id="t1">
+              <title>T</title>
+              <body>
+                <ul>
+                  <li>
+                    <p>First paragraph</p>
+                    <p>Second paragraph</p>
+                  </li>
+                </ul>
+              </body>
+            </topic>
+            """);
+
+        List<Request> requests = mapper.mapTopic(doc, 0);
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("First paragraph")));
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("Second paragraph")));
+
+        long bulletCount = requests.stream().filter(r ->
+            r.getCreateParagraphBullets() != null).count();
+        assertEquals(2, bulletCount);
+    }
+
+    @Test
+    void mapTopic_threeDeepNesting() throws Exception {
+        Document doc = parseXml("""
+            <topic id="t1">
+              <title>T</title>
+              <body>
+                <ul>
+                  <li>Level 0
+                    <ul>
+                      <li>Level 1
+                        <ul>
+                          <li>Level 2</li>
+                        </ul>
+                      </li>
+                    </ul>
+                  </li>
+                </ul>
+              </body>
+            </topic>
+            """);
+
+        List<Request> requests = mapper.mapTopic(doc, 0);
+
+        long bulletCount = requests.stream().filter(r ->
+            r.getCreateParagraphBullets() != null).count();
+        assertEquals(3, bulletCount);
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getUpdateParagraphStyle() != null &&
+            r.getUpdateParagraphStyle().getParagraphStyle().getIndentStart() != null &&
+            r.getUpdateParagraphStyle().getParagraphStyle().getIndentStart()
+                .getMagnitude() == 36.0));
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getUpdateParagraphStyle() != null &&
+            r.getUpdateParagraphStyle().getParagraphStyle().getIndentStart() != null &&
+            r.getUpdateParagraphStyle().getParagraphStyle().getIndentStart()
+                .getMagnitude() == 72.0));
+    }
+
+    @Test
+    void mapTopic_substeps() throws Exception {
+        Document doc = parseXml("""
+            <task id="t1">
+              <title>T</title>
+              <taskbody>
+                <steps>
+                  <step>
+                    <cmd>Main step</cmd>
+                    <substeps>
+                      <substep><cmd>Sub-action A</cmd></substep>
+                      <substep><cmd>Sub-action B</cmd></substep>
+                    </substeps>
+                  </step>
+                </steps>
+              </taskbody>
+            </task>
+            """);
+
+        List<Request> requests = mapper.mapTopic(doc, 0);
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("Main step")));
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("Sub-action A")));
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("Sub-action B")));
+
+        long numberedCount = requests.stream().filter(r ->
+            r.getCreateParagraphBullets() != null &&
+            "NUMBERED_DECIMAL_ALPHA_ROMAN".equals(
+                r.getCreateParagraphBullets().getBulletPreset())).count();
+        assertEquals(3, numberedCount);
+
+        long indentCount = requests.stream().filter(r ->
+            r.getUpdateParagraphStyle() != null &&
+            r.getUpdateParagraphStyle().getParagraphStyle().getIndentStart() != null &&
+            r.getUpdateParagraphStyle().getParagraphStyle().getIndentStart()
+                .getMagnitude() == 36.0).count();
+        assertEquals(2, indentCount);
+    }
+
+    @Test
     void resetIndex_resetsToOne() throws Exception {
         Document doc = parseXml("""
             <topic id="t1">

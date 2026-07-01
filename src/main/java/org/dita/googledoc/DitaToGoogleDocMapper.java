@@ -15,6 +15,7 @@ public class DitaToGoogleDocMapper {
     private final GoogleDocStyleMapper styleMapper;
     private final ImageHandler imageHandler;
     private int currentIndex = 1;
+    private int nestingLevel = 0;
 
     public DitaToGoogleDocMapper(GoogleDocStyleMapper styleMapper, ImageHandler imageHandler) {
         this.styleMapper = styleMapper;
@@ -23,6 +24,7 @@ public class DitaToGoogleDocMapper {
 
     public void resetIndex() {
         this.currentIndex = 1;
+        this.nestingLevel = 0;
     }
 
     public List<Request> mapTopic(Document topicDoc, int topicDepth) {
@@ -157,11 +159,9 @@ public class DitaToGoogleDocMapper {
         }
     }
 
-    private void processListItem(Element element, int topicDepth,
-                                 List<Request> requests, String listType) {
-        int startIndex = currentIndex;
-        processInlineChildren(element, requests);
-        insertText("\n", requests);
+    private void applyBullet(int startIndex, int endIndex,
+                             String listType, List<Request> requests) {
+        if (startIndex >= endIndex) return;
 
         String bulletPreset = "ol".equals(listType)
             ? "NUMBERED_DECIMAL_ALPHA_ROMAN"
@@ -169,32 +169,118 @@ public class DitaToGoogleDocMapper {
 
         requests.add(new Request().setCreateParagraphBullets(
             new CreateParagraphBulletsRequest()
-                .setRange(new Range().setStartIndex(startIndex).setEndIndex(currentIndex - 1))
+                .setRange(new Range().setStartIndex(startIndex).setEndIndex(endIndex))
                 .setBulletPreset(bulletPreset)));
+
+        if (nestingLevel > 0) {
+            double indent = 36.0 * nestingLevel;
+            requests.add(new Request().setUpdateParagraphStyle(
+                new UpdateParagraphStyleRequest()
+                    .setParagraphStyle(new ParagraphStyle()
+                        .setIndentStart(new Dimension().setMagnitude(indent).setUnit("PT"))
+                        .setIndentFirstLine(new Dimension().setMagnitude(indent).setUnit("PT")))
+                    .setRange(new Range().setStartIndex(startIndex).setEndIndex(endIndex))
+                    .setFields("indentFirstLine,indentStart")));
+        }
+    }
+
+    private void processListItem(Element element, int topicDepth,
+                                 List<Request> requests, String listType) {
+        int startIndex = currentIndex;
+        boolean hasInline = false;
+
+        NodeList children = element.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+
+            if (child.getNodeType() == Node.TEXT_NODE) {
+                String text = child.getTextContent();
+                if (!text.trim().isEmpty()) {
+                    insertText(text, requests);
+                    hasInline = true;
+                }
+            } else if (child instanceof Element childElement) {
+                String tag = childElement.getTagName();
+
+                if ("ul".equals(tag) || "ol".equals(tag)) {
+                    if (hasInline) {
+                        insertText("\n", requests);
+                        applyBullet(startIndex, currentIndex - 1, listType, requests);
+                        hasInline = false;
+                    }
+                    nestingLevel++;
+                    processList(childElement, topicDepth, requests, tag);
+                    nestingLevel--;
+                    startIndex = currentIndex;
+                } else if ("p".equals(tag)) {
+                    if (hasInline) {
+                        insertText("\n", requests);
+                        applyBullet(startIndex, currentIndex - 1, listType, requests);
+                        hasInline = false;
+                    }
+                    startIndex = currentIndex;
+                    processInlineChildren(childElement, requests);
+                    insertText("\n", requests);
+                    applyBullet(startIndex, currentIndex - 1, listType, requests);
+                    startIndex = currentIndex;
+                } else {
+                    processInlineElement(childElement, requests);
+                    hasInline = true;
+                }
+            }
+        }
+
+        if (hasInline) {
+            insertText("\n", requests);
+            applyBullet(startIndex, currentIndex - 1, listType, requests);
+        }
     }
 
     private void processStep(Element element, int topicDepth,
                              List<Request> requests, String listType) {
         int startIndex = currentIndex;
+        boolean flushed = false;
+        String effectiveType = listType != null ? listType : "ol";
+
         NodeList children = element.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
             Node child = children.item(i);
             if (child instanceof Element childElement) {
-                if ("cmd".equals(childElement.getTagName())) {
-                    processInlineChildren(childElement, requests);
-                } else if ("info".equals(childElement.getTagName()) ||
-                           "stepresult".equals(childElement.getTagName())) {
-                    insertText(" ", requests);
-                    processInlineChildren(childElement, requests);
+                String tag = childElement.getTagName();
+                switch (tag) {
+                    case "cmd" -> processInlineChildren(childElement, requests);
+                    case "info", "stepresult" -> {
+                        if (!flushed) {
+                            insertText(" ", requests);
+                        }
+                        processInlineChildren(childElement, requests);
+                    }
+                    case "substeps" -> {
+                        if (currentIndex > startIndex && !flushed) {
+                            insertText("\n", requests);
+                            applyBullet(startIndex, currentIndex - 1, effectiveType, requests);
+                            flushed = true;
+                        }
+                        nestingLevel++;
+                        NodeList substepNodes = childElement.getChildNodes();
+                        for (int j = 0; j < substepNodes.getLength(); j++) {
+                            Node sn = substepNodes.item(j);
+                            if (sn instanceof Element se
+                                && "substep".equals(se.getTagName())) {
+                                processStep(se, topicDepth, requests, "ol");
+                            }
+                        }
+                        nestingLevel--;
+                        startIndex = currentIndex;
+                    }
                 }
             }
         }
-        insertText("\n", requests);
 
-        requests.add(new Request().setCreateParagraphBullets(
-            new CreateParagraphBulletsRequest()
-                .setRange(new Range().setStartIndex(startIndex).setEndIndex(currentIndex - 1))
-                .setBulletPreset("NUMBERED_DECIMAL_ALPHA_ROMAN")));
+        if (!flushed && currentIndex > startIndex) {
+            insertText("\n", requests);
+            applyBullet(startIndex, currentIndex - 1, effectiveType, requests);
+        }
     }
 
     private void processTable(Element element, List<Request> requests) {
@@ -450,28 +536,32 @@ public class DitaToGoogleDocMapper {
                     insertText(text, requests);
                 }
             } else if (child instanceof Element childElement) {
-                String tag = childElement.getTagName();
-                TextStyle style = styleMapper.getTextStyle(tag);
-
-                if ("xref".equals(tag)) {
-                    processXref(childElement, requests);
-                } else if ("image".equals(tag)) {
-                    processImage(childElement, requests);
-                } else if (style != null) {
-                    int startIndex = currentIndex;
-                    processInlineChildren(childElement, requests);
-                    int endIndex = currentIndex;
-
-                    String fields = buildFieldMask(style);
-                    requests.add(new Request().setUpdateTextStyle(
-                        new UpdateTextStyleRequest()
-                            .setTextStyle(style)
-                            .setRange(new Range().setStartIndex(startIndex).setEndIndex(endIndex))
-                            .setFields(fields)));
-                } else {
-                    processInlineChildren(childElement, requests);
-                }
+                processInlineElement(childElement, requests);
             }
+        }
+    }
+
+    private void processInlineElement(Element childElement, List<Request> requests) {
+        String tag = childElement.getTagName();
+        TextStyle style = styleMapper.getTextStyle(tag);
+
+        if ("xref".equals(tag)) {
+            processXref(childElement, requests);
+        } else if ("image".equals(tag)) {
+            processImage(childElement, requests);
+        } else if (style != null) {
+            int startIndex = currentIndex;
+            processInlineChildren(childElement, requests);
+            int endIndex = currentIndex;
+
+            String fields = buildFieldMask(style);
+            requests.add(new Request().setUpdateTextStyle(
+                new UpdateTextStyleRequest()
+                    .setTextStyle(style)
+                    .setRange(new Range().setStartIndex(startIndex).setEndIndex(endIndex))
+                    .setFields(fields)));
+        } else {
+            processInlineChildren(childElement, requests);
         }
     }
 
