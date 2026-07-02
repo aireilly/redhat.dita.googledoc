@@ -54,6 +54,43 @@ class GoogleDocStyleMapperTest {
 
     @ParameterizedTest
     @CsvSource(value = {
+        "prereq; 'Prerequisites: '",
+        "context; 'Context: '",
+        "result; 'Expected results: '",
+        "postreq; 'What to do next: '"
+    }, delimiter = ';', quoteCharacter = '\'')
+    void getTaskSectionLabel_returnsCorrectLabel(String element, String expected) {
+        assertEquals(expected, mapper.getTaskSectionLabel(element));
+    }
+
+    @Test
+    void getTaskSectionLabel_unknownElement_returnsNull() {
+        assertNull(mapper.getTaskSectionLabel("p"));
+    }
+
+    @ParameterizedTest
+    @CsvSource(value = {
+        "danger; 'DANGER: '",
+        "warning; 'WARNING: '",
+        "caution; 'CAUTION: '",
+        "notice; 'NOTICE: '"
+    }, delimiter = ';', quoteCharacter = '\'')
+    void getHazardPrefix_returnsCorrectPrefix(String type, String expected) {
+        assertEquals(expected, mapper.getHazardPrefix(type));
+    }
+
+    @Test
+    void getHazardPrefix_unknownType_returnsWarning() {
+        assertEquals("WARNING: ", mapper.getHazardPrefix("unknown"));
+    }
+
+    @Test
+    void getHazardPrefix_nullType_returnsWarning() {
+        assertEquals("WARNING: ", mapper.getHazardPrefix(null));
+    }
+
+    @ParameterizedTest
+    @CsvSource(value = {
         "note; 'Note: '",
         "warning; 'Warning: '",
         "caution; 'Caution: '",

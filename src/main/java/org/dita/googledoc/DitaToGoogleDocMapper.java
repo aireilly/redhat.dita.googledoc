@@ -16,6 +16,7 @@ public class DitaToGoogleDocMapper {
     private final ImageHandler imageHandler;
     private int currentIndex = 1;
     private int nestingLevel = 0;
+    private int footnoteCounter = 0;
 
     public DitaToGoogleDocMapper(GoogleDocStyleMapper styleMapper, ImageHandler imageHandler) {
         this.styleMapper = styleMapper;
@@ -25,6 +26,7 @@ public class DitaToGoogleDocMapper {
     public void resetIndex() {
         this.currentIndex = 1;
         this.nestingLevel = 0;
+        this.footnoteCounter = 0;
     }
 
     public List<Request> mapTopic(Document topicDoc, int topicDepth) {
@@ -43,21 +45,21 @@ public class DitaToGoogleDocMapper {
                 processTopicElement(element, topicDepth, requests);
             case "title" ->
                 processTitle(element, topicDepth, requests);
-            case "section" ->
+            case "section", "example" ->
                 processSection(element, topicDepth, requests);
-            case "body", "conbody", "taskbody", "refbody" ->
+            case "body", "conbody", "taskbody", "refbody", "abstract" ->
                 processChildren(element, topicDepth, requests, listType);
             case "p" ->
                 processParagraph(element, topicDepth, requests);
-            case "ul" ->
+            case "ul", "choices" ->
                 processList(element, topicDepth, requests, "ul");
             case "ol" ->
                 processList(element, topicDepth, requests, "ol");
-            case "li" ->
+            case "li", "choice" ->
                 processListItem(element, topicDepth, requests, listType);
             case "table", "simpletable" ->
                 processTable(element, requests);
-            case "codeblock" ->
+            case "codeblock", "screen" ->
                 processCodeblock(element, requests);
             case "note" ->
                 processNote(element, topicDepth, requests);
@@ -67,6 +69,16 @@ public class DitaToGoogleDocMapper {
                 processImage(element, requests);
             case "xref" ->
                 processXref(element, requests);
+            case "shortdesc" ->
+                processShortdesc(element, requests);
+            case "lq" ->
+                processLongQuote(element, requests);
+            case "prereq", "context", "result", "postreq" ->
+                processTaskSection(element, topicDepth, requests);
+            case "choicetable" ->
+                processChoicetable(element, requests);
+            case "hazardstatement" ->
+                processHazardStatement(element, requests);
             case "fig" ->
                 processChildren(element, topicDepth, requests, listType);
             case "pre" ->
@@ -109,7 +121,7 @@ public class DitaToGoogleDocMapper {
         String parentTag = parent != null ? parent.getTagName() : "";
 
         String styleName;
-        if ("section".equals(parentTag)) {
+        if ("section".equals(parentTag) || "example".equals(parentTag)) {
             styleName = styleMapper.getNamedStyle("section", topicDepth);
         } else {
             styleName = styleMapper.getNamedStyle("title", topicDepth);
@@ -255,6 +267,26 @@ public class DitaToGoogleDocMapper {
                         }
                         processInlineChildren(childElement, requests);
                     }
+                    case "choices" -> {
+                        if (currentIndex > startIndex && !flushed) {
+                            insertText("\n", requests);
+                            applyBullet(startIndex, currentIndex - 1, effectiveType, requests);
+                            flushed = true;
+                        }
+                        nestingLevel++;
+                        processList(childElement, topicDepth, requests, "ul");
+                        nestingLevel--;
+                        startIndex = currentIndex;
+                    }
+                    case "choicetable" -> {
+                        if (currentIndex > startIndex && !flushed) {
+                            insertText("\n", requests);
+                            applyBullet(startIndex, currentIndex - 1, effectiveType, requests);
+                            flushed = true;
+                        }
+                        processChoicetable(childElement, requests);
+                        startIndex = currentIndex;
+                    }
                     case "substeps" -> {
                         if (currentIndex > startIndex && !flushed) {
                             insertText("\n", requests);
@@ -281,6 +313,193 @@ public class DitaToGoogleDocMapper {
             insertText("\n", requests);
             applyBullet(startIndex, currentIndex - 1, effectiveType, requests);
         }
+    }
+
+    private void processShortdesc(Element element, List<Request> requests) {
+        int startIndex = currentIndex;
+        processInlineChildren(element, requests);
+        insertText("\n", requests);
+
+        requests.add(new Request().setUpdateTextStyle(
+            new UpdateTextStyleRequest()
+                .setTextStyle(new TextStyle().setItalic(true))
+                .setRange(new Range().setStartIndex(startIndex).setEndIndex(currentIndex - 1))
+                .setFields("italic")));
+
+        requests.add(new Request().setUpdateParagraphStyle(
+            new UpdateParagraphStyleRequest()
+                .setParagraphStyle(new ParagraphStyle().setNamedStyleType("NORMAL_TEXT"))
+                .setRange(new Range().setStartIndex(startIndex).setEndIndex(currentIndex - 1))
+                .setFields("namedStyleType")));
+    }
+
+    private void processLongQuote(Element element, List<Request> requests) {
+        int startIndex = currentIndex;
+        processInlineChildren(element, requests);
+        insertText("\n", requests);
+
+        requests.add(new Request().setUpdateTextStyle(
+            new UpdateTextStyleRequest()
+                .setTextStyle(new TextStyle().setItalic(true))
+                .setRange(new Range().setStartIndex(startIndex).setEndIndex(currentIndex - 1))
+                .setFields("italic")));
+
+        requests.add(new Request().setUpdateParagraphStyle(
+            new UpdateParagraphStyleRequest()
+                .setParagraphStyle(new ParagraphStyle()
+                    .setIndentFirstLine(new Dimension().setMagnitude(36.0).setUnit("PT"))
+                    .setIndentStart(new Dimension().setMagnitude(36.0).setUnit("PT")))
+                .setRange(new Range().setStartIndex(startIndex).setEndIndex(currentIndex - 1))
+                .setFields("indentFirstLine,indentStart")));
+    }
+
+    private void processFootnote(Element element, List<Request> requests) {
+        footnoteCounter++;
+        String marker = " [" + footnoteCounter + ": ";
+        String footnoteText = getTextContent(element) + "]";
+
+        int markerStart = currentIndex;
+        insertText(marker, requests);
+        int markerEnd = currentIndex;
+        insertText(footnoteText, requests);
+
+        requests.add(new Request().setUpdateTextStyle(
+            new UpdateTextStyleRequest()
+                .setTextStyle(new TextStyle().setBold(true))
+                .setRange(new Range().setStartIndex(markerStart).setEndIndex(markerEnd))
+                .setFields("bold")));
+    }
+
+    private void processTaskSection(Element element, int topicDepth,
+                                     List<Request> requests) {
+        Element titleChild = getFirstChildByTag(element, "title");
+        if (titleChild != null) {
+            processSection(element, topicDepth, requests);
+            return;
+        }
+
+        String label = styleMapper.getTaskSectionLabel(element.getTagName());
+        if (label != null) {
+            int labelStart = currentIndex;
+            insertText(label + "\n", requests);
+            requests.add(new Request().setUpdateTextStyle(
+                new UpdateTextStyleRequest()
+                    .setTextStyle(new TextStyle().setBold(true))
+                    .setRange(new Range().setStartIndex(labelStart).setEndIndex(currentIndex - 1))
+                    .setFields("bold")));
+        }
+
+        NodeList children = element.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            if (child instanceof Element childElement) {
+                if (!"title".equals(childElement.getTagName())) {
+                    processElement(childElement, topicDepth, requests, null);
+                }
+            }
+        }
+    }
+
+    private void processChoicetable(Element element, List<Request> requests) {
+        List<List<String>> cellContents = new ArrayList<>();
+
+        Element chhead = getFirstChildByTag(element, "chhead");
+        if (chhead != null) {
+            List<String> headerRow = new ArrayList<>();
+            Element choption = getFirstChildByTag(chhead, "choption");
+            Element chdesc = getFirstChildByTag(chhead, "chdesc");
+            headerRow.add(choption != null ? getTextContent(choption) : "Option");
+            headerRow.add(chdesc != null ? getTextContent(chdesc) : "Description");
+            cellContents.add(headerRow);
+        }
+
+        NodeList children = element.getChildNodes();
+        for (int i = 0; i < children.getLength(); i++) {
+            Node child = children.item(i);
+            if (child instanceof Element el && "chrow".equals(el.getTagName())) {
+                List<String> row = new ArrayList<>();
+                Element choption = getFirstChildByTag(el, "choption");
+                Element chdesc = getFirstChildByTag(el, "chdesc");
+                row.add(choption != null ? getTextContent(choption) : "");
+                row.add(chdesc != null ? getTextContent(chdesc) : "");
+                cellContents.add(row);
+            }
+        }
+
+        int rows = cellContents.size();
+        if (rows == 0) return;
+        int cols = 2;
+
+        requests.add(new Request().setInsertTable(
+            new InsertTableRequest()
+                .setRows(rows)
+                .setColumns(cols)
+                .setLocation(new Location().setIndex(currentIndex))));
+
+        currentIndex += 4;
+
+        for (int r = 0; r < rows; r++) {
+            List<String> row = cellContents.get(r);
+            for (int c = 0; c < cols; c++) {
+                String cellText = c < row.size() ? row.get(c) : "";
+                if (!cellText.isEmpty()) {
+                    insertText(cellText, requests);
+                }
+                if (c < cols - 1) {
+                    currentIndex += 2;
+                }
+            }
+            if (r < rows - 1) {
+                currentIndex += 3;
+            }
+        }
+
+        currentIndex += 2;
+    }
+
+    private void processHazardStatement(Element element, List<Request> requests) {
+        String hazardType = element.getAttribute("type");
+        String prefix = styleMapper.getHazardPrefix(hazardType);
+
+        int startIndex = currentIndex;
+        int prefixStart = currentIndex;
+        insertText(prefix, requests);
+        int prefixEnd = currentIndex;
+
+        Element messagePanel = getFirstChildByTag(element, "messagepanel");
+        if (messagePanel != null) {
+            Element typeOfHazard = getFirstChildByTag(messagePanel, "typeofhazard");
+            if (typeOfHazard != null) {
+                insertText(getTextContent(typeOfHazard), requests);
+            }
+            insertText("\n", requests);
+
+            Element consequence = getFirstChildByTag(messagePanel, "consequence");
+            if (consequence != null) {
+                insertText(getTextContent(consequence) + "\n", requests);
+            }
+
+            Element howtoavoid = getFirstChildByTag(messagePanel, "howtoavoid");
+            if (howtoavoid != null) {
+                insertText(getTextContent(howtoavoid) + "\n", requests);
+            }
+        } else {
+            insertText("\n", requests);
+        }
+
+        requests.add(new Request().setUpdateTextStyle(
+            new UpdateTextStyleRequest()
+                .setTextStyle(new TextStyle().setBold(true))
+                .setRange(new Range().setStartIndex(prefixStart).setEndIndex(prefixEnd))
+                .setFields("bold")));
+
+        requests.add(new Request().setUpdateParagraphStyle(
+            new UpdateParagraphStyleRequest()
+                .setParagraphStyle(new ParagraphStyle()
+                    .setIndentFirstLine(new Dimension().setMagnitude(36.0).setUnit("PT"))
+                    .setIndentStart(new Dimension().setMagnitude(36.0).setUnit("PT")))
+                .setRange(new Range().setStartIndex(startIndex).setEndIndex(currentIndex - 1))
+                .setFields("indentFirstLine,indentStart")));
     }
 
     private void processTable(Element element, List<Request> requests) {
@@ -549,6 +768,8 @@ public class DitaToGoogleDocMapper {
             processXref(childElement, requests);
         } else if ("image".equals(tag)) {
             processImage(childElement, requests);
+        } else if ("fn".equals(tag)) {
+            processFootnote(childElement, requests);
         } else if (style != null) {
             int startIndex = currentIndex;
             processInlineChildren(childElement, requests);

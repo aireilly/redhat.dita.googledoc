@@ -537,6 +537,356 @@ class DitaToGoogleDocMapperTest {
     }
 
     @Test
+    void mapTopic_screen() throws Exception {
+        Document doc = parseXml("""
+            <topic id="t1">
+              <title>T</title>
+              <body><screen>$ ls -la</screen></body>
+            </topic>
+            """);
+
+        List<Request> requests = mapper.mapTopic(doc, 0);
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("$ ls -la")));
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getUpdateTextStyle() != null &&
+            r.getUpdateTextStyle().getTextStyle().getWeightedFontFamily() != null &&
+            "Courier New".equals(r.getUpdateTextStyle().getTextStyle()
+                .getWeightedFontFamily().getFontFamily())));
+    }
+
+    @Test
+    void mapTopic_choices() throws Exception {
+        Document doc = parseXml("""
+            <task id="t1">
+              <title>T</title>
+              <taskbody>
+                <steps>
+                  <step>
+                    <cmd>Choose an option:</cmd>
+                    <choices>
+                      <choice>Option A</choice>
+                      <choice>Option B</choice>
+                    </choices>
+                  </step>
+                </steps>
+              </taskbody>
+            </task>
+            """);
+
+        List<Request> requests = mapper.mapTopic(doc, 0);
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("Option A")));
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getCreateParagraphBullets() != null &&
+            "BULLET_DISC_CIRCLE_SQUARE".equals(
+                r.getCreateParagraphBullets().getBulletPreset())));
+    }
+
+    @Test
+    void mapTopic_example() throws Exception {
+        Document doc = parseXml("""
+            <topic id="t1">
+              <title>T</title>
+              <body>
+                <example>
+                  <title>Example Title</title>
+                  <p>Example content here.</p>
+                </example>
+              </body>
+            </topic>
+            """);
+
+        List<Request> requests = mapper.mapTopic(doc, 0);
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("Example Title")));
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getUpdateParagraphStyle() != null &&
+            "HEADING_2".equals(r.getUpdateParagraphStyle()
+                .getParagraphStyle().getNamedStyleType())));
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("Example content here.")));
+    }
+
+    @Test
+    void mapTopic_abstract() throws Exception {
+        Document doc = parseXml("""
+            <topic id="t1">
+              <title>T</title>
+              <abstract>
+                <p>Abstract paragraph.</p>
+              </abstract>
+              <body><p>Body text.</p></body>
+            </topic>
+            """);
+
+        List<Request> requests = mapper.mapTopic(doc, 0);
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("Abstract paragraph.")));
+    }
+
+    @Test
+    void mapTopic_shortdesc() throws Exception {
+        Document doc = parseXml("""
+            <topic id="t1">
+              <title>T</title>
+              <shortdesc>This is the short description.</shortdesc>
+              <body><p>Body text.</p></body>
+            </topic>
+            """);
+
+        List<Request> requests = mapper.mapTopic(doc, 0);
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("This is the short description.")));
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getUpdateTextStyle() != null &&
+            Boolean.TRUE.equals(r.getUpdateTextStyle().getTextStyle().getItalic())));
+    }
+
+    @Test
+    void mapTopic_longQuote() throws Exception {
+        Document doc = parseXml("""
+            <topic id="t1">
+              <title>T</title>
+              <body>
+                <lq>This is a long quotation from another source.</lq>
+              </body>
+            </topic>
+            """);
+
+        List<Request> requests = mapper.mapTopic(doc, 0);
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("This is a long quotation")));
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getUpdateTextStyle() != null &&
+            Boolean.TRUE.equals(r.getUpdateTextStyle().getTextStyle().getItalic())));
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getUpdateParagraphStyle() != null &&
+            r.getUpdateParagraphStyle().getParagraphStyle().getIndentStart() != null &&
+            r.getUpdateParagraphStyle().getParagraphStyle().getIndentStart()
+                .getMagnitude() == 36.0));
+    }
+
+    @Test
+    void mapTopic_footnote() throws Exception {
+        Document doc = parseXml("""
+            <topic id="t1">
+              <title>T</title>
+              <body>
+                <p>Some text<fn>This is a footnote.</fn> continues here.</p>
+              </body>
+            </topic>
+            """);
+
+        List<Request> requests = mapper.mapTopic(doc, 0);
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("[1: ")));
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("This is a footnote.")));
+    }
+
+    @Test
+    void mapTopic_prereq() throws Exception {
+        Document doc = parseXml("""
+            <task id="t1">
+              <title>T</title>
+              <taskbody>
+                <prereq><p>You need Java 17.</p></prereq>
+                <steps><step><cmd>Run the build.</cmd></step></steps>
+              </taskbody>
+            </task>
+            """);
+
+        List<Request> requests = mapper.mapTopic(doc, 0);
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("Prerequisites: ")));
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("You need Java 17.")));
+    }
+
+    @Test
+    void mapTopic_context() throws Exception {
+        Document doc = parseXml("""
+            <task id="t1">
+              <title>T</title>
+              <taskbody>
+                <context><p>Background information.</p></context>
+                <steps><step><cmd>Do something.</cmd></step></steps>
+              </taskbody>
+            </task>
+            """);
+
+        List<Request> requests = mapper.mapTopic(doc, 0);
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("Context: ")));
+    }
+
+    @Test
+    void mapTopic_result() throws Exception {
+        Document doc = parseXml("""
+            <task id="t1">
+              <title>T</title>
+              <taskbody>
+                <steps><step><cmd>Run it.</cmd></step></steps>
+                <result><p>The output appears.</p></result>
+              </taskbody>
+            </task>
+            """);
+
+        List<Request> requests = mapper.mapTopic(doc, 0);
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("Expected results: ")));
+    }
+
+    @Test
+    void mapTopic_postreq() throws Exception {
+        Document doc = parseXml("""
+            <task id="t1">
+              <title>T</title>
+              <taskbody>
+                <steps><step><cmd>Install it.</cmd></step></steps>
+                <postreq><p>Restart the service.</p></postreq>
+              </taskbody>
+            </task>
+            """);
+
+        List<Request> requests = mapper.mapTopic(doc, 0);
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("What to do next: ")));
+    }
+
+    @Test
+    void mapTopic_choicetable() throws Exception {
+        Document doc = parseXml("""
+            <topic id="t1">
+              <title>T</title>
+              <body>
+                <choicetable>
+                  <chhead>
+                    <choption>Mode</choption>
+                    <chdesc>Description</chdesc>
+                  </chhead>
+                  <chrow>
+                    <choption>Fast</choption>
+                    <chdesc>Quick but less thorough</chdesc>
+                  </chrow>
+                  <chrow>
+                    <choption>Full</choption>
+                    <chdesc>Complete analysis</chdesc>
+                  </chrow>
+                </choicetable>
+              </body>
+            </topic>
+            """);
+
+        List<Request> requests = mapper.mapTopic(doc, 0);
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertTable() != null &&
+            r.getInsertTable().getRows() == 3 &&
+            r.getInsertTable().getColumns() == 2));
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("Fast")));
+    }
+
+    @Test
+    void mapTopic_hazardstatement() throws Exception {
+        Document doc = parseXml("""
+            <topic id="t1">
+              <title>T</title>
+              <body>
+                <hazardstatement type="danger">
+                  <messagepanel>
+                    <typeofhazard>High voltage</typeofhazard>
+                    <consequence>Can cause electric shock.</consequence>
+                    <howtoavoid>Disconnect power before servicing.</howtoavoid>
+                  </messagepanel>
+                </hazardstatement>
+              </body>
+            </topic>
+            """);
+
+        List<Request> requests = mapper.mapTopic(doc, 0);
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("DANGER: ")));
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("High voltage")));
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("Disconnect power")));
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getUpdateParagraphStyle() != null &&
+            r.getUpdateParagraphStyle().getParagraphStyle().getIndentStart() != null &&
+            r.getUpdateParagraphStyle().getParagraphStyle().getIndentStart()
+                .getMagnitude() == 36.0));
+    }
+
+    @Test
+    void mapTopic_hazardstatementDefaultType() throws Exception {
+        Document doc = parseXml("""
+            <topic id="t1">
+              <title>T</title>
+              <body>
+                <hazardstatement>
+                  <messagepanel>
+                    <typeofhazard>General hazard</typeofhazard>
+                    <howtoavoid>Follow safety procedures.</howtoavoid>
+                  </messagepanel>
+                </hazardstatement>
+              </body>
+            </topic>
+            """);
+
+        List<Request> requests = mapper.mapTopic(doc, 0);
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("WARNING: ")));
+    }
+
+    @Test
     void resetIndex_resetsToOne() throws Exception {
         Document doc = parseXml("""
             <topic id="t1">

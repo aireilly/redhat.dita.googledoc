@@ -4,4 +4,6 @@
   <topicref href="intro.dita">
     <topicref href="features.dita"/>
   </topicref>
+  <topicref href="task-demo.dita"/>
+  <topicref href="elements-demo.dita"/>
 </map>

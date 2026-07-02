@@ -7,6 +7,20 @@ import java.util.Map;
 
 public class GoogleDocStyleMapper {
 
+    private static final Map<String, String> TASK_SECTION_LABELS = Map.of(
+        "prereq", "Prerequisites: ",
+        "context", "Context: ",
+        "result", "Expected results: ",
+        "postreq", "What to do next: "
+    );
+
+    private static final Map<String, String> HAZARD_PREFIXES = Map.of(
+        "danger", "DANGER: ",
+        "warning", "WARNING: ",
+        "caution", "CAUTION: ",
+        "notice", "NOTICE: "
+    );
+
     private static final Map<String, String> NOTE_PREFIXES = Map.ofEntries(
         Map.entry("note", "Note: "),
         Map.entry("warning", "Warning: "),
@@ -46,6 +60,15 @@ public class GoogleDocStyleMapper {
 
     public String getNotePrefix(String noteType) {
         return NOTE_PREFIXES.getOrDefault(noteType, "Note: ");
+    }
+
+    public String getTaskSectionLabel(String elementName) {
+        return TASK_SECTION_LABELS.get(elementName);
+    }
+
+    public String getHazardPrefix(String hazardType) {
+        return HAZARD_PREFIXES.getOrDefault(
+            hazardType != null ? hazardType.toLowerCase() : "", "WARNING: ");
     }
 
     private String headingForDepth(int depth) {

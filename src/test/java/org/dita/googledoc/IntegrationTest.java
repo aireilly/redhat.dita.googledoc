@@ -34,11 +34,15 @@ class IntegrationTest {
         List<GoogleDocRenderer.TopicRef> refs = GoogleDocRenderer.parseTopicRefs(mapPath);
 
         assertEquals("Sample Google Doc Output", mapTitle);
-        assertEquals(2, refs.size());
+        assertEquals(4, refs.size());
         assertEquals("intro.dita", refs.get(0).href());
         assertEquals(0, refs.get(0).depth());
         assertEquals("features.dita", refs.get(1).href());
         assertEquals(1, refs.get(1).depth());
+        assertEquals("task-demo.dita", refs.get(2).href());
+        assertEquals(0, refs.get(2).depth());
+        assertEquals("elements-demo.dita", refs.get(3).href());
+        assertEquals(0, refs.get(3).depth());
 
         List<Request> allRequests = new ArrayList<>();
         String mapDir = Path.of(mapPath).getParent().toString();

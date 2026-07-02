@@ -1,5 +1,9 @@
 # DITA OT Google Doc Plugin
 
+> **Caveat:** This plugin was generated with LLM assistance and is likely
+> broken in non-trivial ways. Treat it as a proof of concept rather than
+> production-ready software. Contributions and bug reports are welcome.
+
 A DITA Open Toolkit plugin that renders DITA XML content as a Google Doc.
 
 ## Requirements
@@ -70,20 +74,39 @@ Opens a browser on first run. Stores a refresh token in `~/.dita-googledoc/token
 | `googledoc.token.dir` | No | `~/.dita-googledoc/tokens` | OAuth token storage |
 | `googledoc.image.max.width` | No | `468` | Max image width in points |
 
+## DITAVAL Filtering
+
+The plugin supports DITAVAL filtering via the standard DITA-OT `--filter` parameter:
+
+    dita --input=mymap.ditamap --format=googledoc \
+      --filter=path/to/conditions.ditaval
+
+Filtering (include/exclude) is handled by DITA-OT's preprocessing pipeline before
+the Google Doc rendering stage. All standard DITAVAL filtering attributes
+(audience, platform, product, etc.) are supported.
+
+Note: DITAVAL flagging (visual styling of content based on conditions) is not
+currently supported. Only include/exclude filtering is applied.
+
 ## Supported DITA Elements
 
 - Topics (topic, concept, task, reference) with nested hierarchy
-- Sections with titles
+- Abstract and short description
+- Sections and examples with titles
 - Paragraphs, inline formatting (bold, italic, underline, monospace)
-- Ordered and unordered lists
+- Ordered and unordered lists with nesting support
 - Definition lists
-- Tables (CALS table model)
-- Code blocks
+- Tables (CALS and simpletable models)
+- Choice tables
+- Code blocks and screen output
+- Long quotes
 - Images
 - Cross-references (external links)
+- Footnotes (inline rendering)
 - Notes (note, warning, caution, danger, tip, important)
+- Hazard statements (danger, warning, caution, notice)
+- Task elements: prerequisites, context, steps, substeps, choices, result, post-requisites
 - Related links
-- Task steps
 
 ## Development
 

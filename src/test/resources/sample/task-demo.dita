@@ -1,0 +1,76 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<task id="task-demo">
+  <title>Installing the Plugin</title>
+  <shortdesc>This task walks you through installing and configuring the
+  DITA-to-Google-Docs plugin.</shortdesc>
+  <taskbody>
+    <prereq>
+      <p>Before you begin, ensure you have the following:</p>
+      <ul>
+        <li>Java 17 or later</li>
+        <li>DITA Open Toolkit 4.2 or later</li>
+        <li>A Google Cloud project with the Docs API enabled</li>
+      </ul>
+    </prereq>
+    <context>
+      <p>The plugin converts DITA XML content into a formatted Google Doc.
+      It supports a wide range of DITA elements and authenticates
+      automatically using your existing <codeph>gcloud</codeph> session.</p>
+    </context>
+    <steps>
+      <step>
+        <cmd>Build the plugin from source.</cmd>
+        <choices>
+          <choice>Run <codeph>./gradlew bundlePlugin</codeph> on Linux or macOS</choice>
+          <choice>Run <codeph>gradlew.bat bundlePlugin</codeph> on Windows</choice>
+        </choices>
+      </step>
+      <step>
+        <cmd>Install the plugin into your DITA-OT instance.</cmd>
+        <substeps>
+          <substep>
+            <cmd>Navigate to the DITA-OT installation directory.</cmd>
+          </substep>
+          <substep>
+            <cmd>Run <codeph>dita install path/to/redhat.dita.googledoc-1.0.0.zip</codeph>.</cmd>
+          </substep>
+        </substeps>
+      </step>
+      <step>
+        <cmd>Choose an authentication method.</cmd>
+        <choicetable>
+          <chhead>
+            <choption>Method</choption>
+            <chdesc>When to use</chdesc>
+          </chhead>
+          <chrow>
+            <choption>gcloud CLI</choption>
+            <chdesc>Local development with an existing gcloud session</chdesc>
+          </chrow>
+          <chrow>
+            <choption>Service account</choption>
+            <chdesc>CI/CD pipelines and automated builds</chdesc>
+          </chrow>
+          <chrow>
+            <choption>OAuth 2.0</choption>
+            <chdesc>Interactive usage with browser-based consent</chdesc>
+          </chrow>
+        </choicetable>
+      </step>
+      <step>
+        <cmd>Run the transformation.</cmd>
+        <info>Use the standard <codeph>dita</codeph> command with the
+        <codeph>googledoc</codeph> format.</info>
+      </step>
+    </steps>
+    <result>
+      <p>A new Google Doc is created containing your formatted DITA content.
+      The document URL is printed to the console.</p>
+    </result>
+    <postreq>
+      <p>After installation, verify the plugin is working by running the
+      sample transformation:</p>
+      <codeblock>dita --input=sample.ditamap --format=googledoc</codeblock>
+    </postreq>
+  </taskbody>
+</task>

@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<concept id="elements-demo">
+  <title>Element Rendering Demo</title>
+  <abstract>
+    <p>This topic demonstrates all supported DITA elements rendered as
+    Google Docs content.</p>
+    <shortdesc>Each section below showcases a different element type with
+    its expected visual output.</shortdesc>
+  </abstract>
+  <conbody>
+
+    <section>
+      <title>Nested Lists</title>
+      <p>Unordered list with nesting:</p>
+      <ul>
+        <li>Top-level item
+          <ul>
+            <li>Second-level item
+              <ul>
+                <li>Third-level item</li>
+              </ul>
+            </li>
+            <li>Another second-level item</li>
+          </ul>
+        </li>
+        <li>Another top-level item</li>
+      </ul>
+      <p>Ordered list with nesting:</p>
+      <ol>
+        <li>First step
+          <ol>
+            <li>Sub-step A</li>
+            <li>Sub-step B</li>
+          </ol>
+        </li>
+        <li>Second step</li>
+      </ol>
+      <p>Mixed list types:</p>
+      <ul>
+        <li>Bullet item with numbered sub-items:
+          <ol>
+            <li>Numbered child one</li>
+            <li>Numbered child two</li>
+          </ol>
+        </li>
+      </ul>
+    </section>
+
+    <example>
+      <title>Example: Running the Plugin</title>
+      <p>The following command converts a DITA map to a Google Doc:</p>
+      <codeblock>dita --input=userguide.ditamap --format=googledoc</codeblock>
+      <p>The output URL is printed to standard output.</p>
+    </example>
+
+    <section>
+      <title>Screen Output</title>
+      <p>Terminal output is rendered in monospace font:</p>
+      <screen>$ dita --input=sample.ditamap --format=googledoc
+[INFO] Processing sample.ditamap
+[INFO] Created document: https://docs.google.com/document/d/1abc.../edit
+BUILD SUCCESSFUL in 8s</screen>
+    </section>
+
+    <section>
+      <title>Long Quote</title>
+      <p>The following is a quotation from the DITA specification:</p>
+      <lq>DITA maps are documents that collect and organize references to
+      DITA topics to indicate the relationships among the topics. They can
+      also serve as outlines or tables of contents for DITA deliverables
+      and as build manifests for DITA projects.</lq>
+      <p>Long quotes are rendered with italic text and indentation.</p>
+    </section>
+
+    <section>
+      <title>Footnotes</title>
+      <p>The plugin supports inline footnotes<fn>Footnotes are rendered as
+      inline bracketed text rather than true Google Docs footnotes.</fn>
+      that appear directly in the text flow. Multiple footnotes<fn>Each
+      footnote is numbered sequentially within the document.</fn> are
+      supported.</p>
+    </section>
+
+    <section>
+      <title>Hazard Statements</title>
+      <hazardstatement type="danger">
+        <messagepanel>
+          <typeofhazard>Electrical shock hazard</typeofhazard>
+          <consequence>Contact with live circuits can cause severe injury
+          or death.</consequence>
+          <howtoavoid>Disconnect all power sources before opening the
+          equipment enclosure.</howtoavoid>
+        </messagepanel>
+      </hazardstatement>
+      <hazardstatement type="caution">
+        <messagepanel>
+          <typeofhazard>Data loss</typeofhazard>
+          <consequence>Unsaved changes will be lost if the service is
+          restarted.</consequence>
+          <howtoavoid>Save all work before performing maintenance
+          operations.</howtoavoid>
+        </messagepanel>
+      </hazardstatement>
+    </section>
+
+    <section>
+      <title>Definition List</title>
+      <dl>
+        <dlentry>
+          <dt>DITA</dt>
+          <dd>Darwin Information Typing Architecture. An XML-based standard
+          for authoring, producing, and delivering technical
+          documentation.</dd>
+        </dlentry>
+        <dlentry>
+          <dt>DITA-OT</dt>
+          <dd>DITA Open Toolkit. The reference implementation of the DITA
+          specification, providing transforms to various output
+          formats.</dd>
+        </dlentry>
+        <dlentry>
+          <dt>DITAVAL</dt>
+          <dd>A file format used to filter and flag DITA content based on
+          conditional processing attributes such as
+          <codeph>audience</codeph>, <codeph>platform</codeph>, and
+          <codeph>product</codeph>.</dd>
+        </dlentry>
+      </dl>
+    </section>
+
+    <note type="tip">Use <codeph>--filter=conditions.ditaval</codeph> to
+    apply DITAVAL filtering during the transformation.</note>
+
+    <note type="warning">The Google Docs API has rate limits. For large
+    documents, the plugin automatically batches requests and retries on
+    throttling errors.</note>
+  </conbody>
+</concept>
