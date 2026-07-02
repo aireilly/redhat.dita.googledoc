@@ -887,6 +887,143 @@ class DitaToGoogleDocMapperTest {
     }
 
     @Test
+    void mapTopic_whitespaceTextNodesFiltered() throws Exception {
+        Document doc = parseXml("""
+            <topic id="t1">
+              <title>T</title>
+              <body>
+                <p>Text before.
+                  <b>bold</b>
+                  and after.
+                </p>
+              </body>
+            </topic>
+            """);
+
+        List<Request> requests = mapper.mapTopic(doc, 0);
+
+        boolean hasNewlineInInsert = requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("\n            "));
+        assertFalse(hasNewlineInInsert,
+            "Should not insert raw XML indentation whitespace");
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("Text before.")));
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("bold")));
+    }
+
+    @Test
+    void mapTopic_indextermSkipped() throws Exception {
+        Document doc = parseXml("""
+            <topic id="t1">
+              <title>T</title>
+              <body>
+                <p>Visible text
+                  <indexterm>hidden index entry</indexterm>
+                  more visible text.</p>
+              </body>
+            </topic>
+            """);
+
+        List<Request> requests = mapper.mapTopic(doc, 0);
+
+        assertFalse(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("hidden index entry")),
+            "Indexterm content should not be rendered");
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("Visible text")));
+    }
+
+    @Test
+    void mapTopic_prologSkipped() throws Exception {
+        Document doc = parseXml("""
+            <topic id="t1">
+              <title>T</title>
+              <prolog>
+                <metadata>
+                  <keywords>
+                    <indexterm>some keyword</indexterm>
+                  </keywords>
+                </metadata>
+              </prolog>
+              <body><p>Visible body.</p></body>
+            </topic>
+            """);
+
+        List<Request> requests = mapper.mapTopic(doc, 0);
+
+        assertFalse(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("some keyword")),
+            "Prolog/metadata content should not be rendered");
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("Visible body.")));
+    }
+
+    @Test
+    void mapTopic_blockElementInsideParagraph() throws Exception {
+        Document doc = parseXml("""
+            <topic id="t1">
+              <title>T</title>
+              <body>
+                <p>Intro text:
+                  <dl>
+                    <dlentry>
+                      <dt>Term</dt>
+                      <dd>Definition</dd>
+                    </dlentry>
+                  </dl>
+                </p>
+              </body>
+            </topic>
+            """);
+
+        List<Request> requests = mapper.mapTopic(doc, 0);
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("Term")));
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getUpdateTextStyle() != null &&
+            Boolean.TRUE.equals(r.getUpdateTextStyle().getTextStyle().getBold())));
+    }
+
+    @Test
+    void mapTopic_noteInsideParagraph() throws Exception {
+        Document doc = parseXml("""
+            <topic id="t1">
+              <title>T</title>
+              <body>
+                <p>Text before note.
+                  <note type="tip">A helpful tip.</note>
+                </p>
+              </body>
+            </topic>
+            """);
+
+        List<Request> requests = mapper.mapTopic(doc, 0);
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("Tip: ")));
+
+        assertTrue(requests.stream().anyMatch(r ->
+            r.getInsertText() != null &&
+            r.getInsertText().getText().contains("A helpful tip.")));
+    }
+
+    @Test
     void resetIndex_resetsToOne() throws Exception {
         Document doc = parseXml("""
             <topic id="t1">

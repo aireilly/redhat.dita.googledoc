@@ -141,20 +141,26 @@ public class GoogleDocRenderer {
         }
     }
 
+    private static final java.util.Set<String> TOPICREF_ELEMENTS = java.util.Set.of(
+        "topicref", "chapter", "appendix",
+        "part", "preface", "notices", "dedication", "colophon",
+        "amendments", "glossarylist"
+    );
+
     private static void collectTopicRefs(Element element, List<TopicRef> refs, int depth) {
         NodeList children = element.getChildNodes();
         for (int i = 0; i < children.getLength(); i++) {
             Node child = children.item(i);
             if (child instanceof Element el) {
-                if ("topicref".equals(el.getTagName()) ||
-                    "chapter".equals(el.getTagName()) ||
-                    "appendix".equals(el.getTagName())) {
+                String tag = el.getTagName();
+                if (TOPICREF_ELEMENTS.contains(tag)) {
                     String href = el.getAttribute("href");
                     if (!href.isEmpty()) {
                         refs.add(new TopicRef(href, depth));
                     }
                     collectTopicRefs(el, refs, depth + 1);
-                } else if (!"title".equals(el.getTagName())) {
+                } else if (!"title".equals(tag) && !"booktitle".equals(tag)
+                           && !"bookmeta".equals(tag)) {
                     collectTopicRefs(el, refs, depth);
                 }
             }

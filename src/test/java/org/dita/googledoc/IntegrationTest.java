@@ -79,6 +79,34 @@ class IntegrationTest {
     }
 
     @Test
+    void bookmapProcessing_collectsPartAndAppendixRefs() throws Exception {
+        URL mapUrl = getClass().getResource("/sample/sample-bookmap.ditamap");
+        assertNotNull(mapUrl, "sample-bookmap.ditamap not found on classpath");
+
+        String mapPath = Path.of(mapUrl.toURI()).toString();
+        String mapTitle = GoogleDocRenderer.parseMapTitle(mapPath);
+        List<GoogleDocRenderer.TopicRef> refs = GoogleDocRenderer.parseTopicRefs(mapPath);
+
+        assertEquals("Sample Bookmap", mapTitle);
+        assertEquals(5, refs.size());
+
+        assertEquals("intro.dita", refs.get(0).href());
+        assertEquals(0, refs.get(0).depth(), "preface inside frontmatter container");
+
+        assertEquals("intro.dita", refs.get(1).href());
+        assertEquals(0, refs.get(1).depth(), "part at top level");
+
+        assertEquals("features.dita", refs.get(2).href());
+        assertEquals(1, refs.get(2).depth(), "chapter inside part");
+
+        assertEquals("task-demo.dita", refs.get(3).href());
+        assertEquals(0, refs.get(3).depth(), "chapter at top level");
+
+        assertEquals("elements-demo.dita", refs.get(4).href());
+        assertEquals(0, refs.get(4).depth(), "appendix at top level");
+    }
+
+    @Test
     @EnabledIfEnvironmentVariable(named = "GOOGLE_CREDENTIALS_PATH", matches = ".+")
     void liveGoogleDocsCreation() throws Exception {
         String credentialsPath = System.getenv("GOOGLE_CREDENTIALS_PATH");

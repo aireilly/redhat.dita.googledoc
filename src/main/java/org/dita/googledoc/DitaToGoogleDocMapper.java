@@ -751,8 +751,8 @@ public class DitaToGoogleDocMapper {
             Node child = children.item(i);
             if (child.getNodeType() == Node.TEXT_NODE) {
                 String text = child.getTextContent();
-                if (!text.isEmpty()) {
-                    insertText(text, requests);
+                if (!text.trim().isEmpty()) {
+                    insertText(normalizeWhitespace(text), requests);
                 }
             } else if (child instanceof Element childElement) {
                 processInlineElement(childElement, requests);
@@ -760,8 +760,31 @@ public class DitaToGoogleDocMapper {
         }
     }
 
+    private static final java.util.Set<String> SKIP_ELEMENTS = java.util.Set.of(
+        "indexterm", "index-see", "index-see-also", "index-sort-as",
+        "prolog", "metadata", "keywords", "prodinfo", "prodname", "vrmlist", "vrm",
+        "bookmeta", "data", "data-about", "titlealts", "navtitle", "searchtitle",
+        "related-links", "linkpool", "link", "linktext", "desc"
+    );
+
+    private static final java.util.Set<String> BLOCK_ELEMENTS = java.util.Set.of(
+        "note", "dl", "ul", "ol", "table", "simpletable", "codeblock", "screen",
+        "pre", "fig", "section", "example", "hazardstatement",
+        "choicetable", "lq", "p"
+    );
+
     private void processInlineElement(Element childElement, List<Request> requests) {
         String tag = childElement.getTagName();
+
+        if (SKIP_ELEMENTS.contains(tag)) {
+            return;
+        }
+
+        if (BLOCK_ELEMENTS.contains(tag)) {
+            processElement(childElement, 0, requests, null);
+            return;
+        }
+
         TextStyle style = styleMapper.getTextStyle(tag);
 
         if ("xref".equals(tag)) {
@@ -795,6 +818,10 @@ public class DitaToGoogleDocMapper {
         if (style.getWeightedFontFamily() != null) fields.add("weightedFontFamily");
         if (style.getLink() != null) fields.add("link");
         return String.join(",", fields);
+    }
+
+    private String normalizeWhitespace(String text) {
+        return text.replaceAll("\\s+", " ");
     }
 
     private void insertText(String text, List<Request> requests) {
