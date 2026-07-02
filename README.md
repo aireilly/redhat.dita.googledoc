@@ -108,6 +108,53 @@ currently supported. Only include/exclude filtering is applied.
 - Task elements: prerequisites, context, steps, substeps, choices, result, post-requisites
 - Related links
 
+## Not Supported / Known Limitations
+
+The renderer is permissive: unrecognized block elements still emit their text and
+unrecognized inline elements pass their text through. However, the following are
+**not** handled and either produce no output or lose their structure/formatting.
+
+### Dropped entirely (no output)
+
+- Index markup: `indexterm`, `index-see`, `index-see-also`, `index-sort-as`
+- Metadata: `prolog`, `metadata`, `keywords`, `prodinfo`, `prodname`, `vrmlist`,
+  `vrm`, `bookmeta`, `data`, `data-about`
+- Titling alternates: `titlealts`, `navtitle`, `searchtitle`
+- `desc`, `linkpool`, and `link`/`linktext` outside `related-links`
+
+### Inline elements rendered as plain (unstyled) text
+
+- `sup` / `sub` — no superscript or subscript
+- `q` — no quotation marks added
+- `ph`, `keyword`, `tt`, `menucascade` (the `>` separators are lost), `shortcut`,
+  `wintitle`, `xmlelement`, `xmlatt`, and most other phrase/domain inlines
+
+### Block elements flattened to run-on text
+
+- `sl` / `sli` (simple lists) — no bullets or line breaks
+- `parml` / `plentry` / `pt` / `pd` (parameter lists) — term/definition structure lost
+- `lines` — line breaks not preserved
+- Multimedia and foreign content: `object`, `video`, `audio`, `svg-container`,
+  `mathml`, `foreign`, `unknown`
+- `draft-comment` and `required-cleanup` are **not** filtered out and will leak
+  into the output
+
+### Table limitations
+
+- Cell spanning (`@morerows`, `@spanspec`, `namest`/`nameend`) is ignored; merged
+  cells are not supported
+- Block content inside cells (lists, code blocks, inline formatting) is flattened
+  to plain text
+- `colspec` column widths are ignored
+
+### Other
+
+- Internal cross-references are rendered as text without a navigable link; only
+  external (`scope="external"` or `http(s)`) links become clickable
+- Footnotes render inline as `[n: text]` rather than as real Google Docs footnotes
+- DITAVAL flagging (visual styling from conditions) is not supported; only
+  include/exclude filtering is applied
+
 ## Development
 
 Run tests:
