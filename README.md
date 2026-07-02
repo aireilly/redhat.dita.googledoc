@@ -1,4 +1,4 @@
-# DITA OT Google Doc Plugin
+# DITA-OT Google Doc Plugin
 
 > **Caveat:** This plugin was generated with LLM assistance and is likely
 > broken in non-trivial ways. Treat it as a proof of concept rather than
@@ -8,7 +8,7 @@ A DITA Open Toolkit plugin that renders DITA XML content as a Google Doc.
 
 ## Requirements
 
-- DITA OT 4.2 or later
+- DITA-OT 4.2 or later
 - Java 17 or later
 - Google Cloud project with Docs API and Drive API enabled
 
@@ -18,7 +18,7 @@ Build the plugin:
 
     ./gradlew bundlePlugin
 
-Install into DITA OT:
+Install into DITA-OT:
 
     dita install build/distributions/redhat.dita.googledoc-1.0.0.zip
 
