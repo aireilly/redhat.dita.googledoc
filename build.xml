@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project name="dita2googledoc">
+<project name="dita2googledoc" xmlns:if="ant:if" xmlns:unless="ant:unless">
 
   <target name="dita2googledoc.init">
     <property name="googledoc.credentials" value=""/>
@@ -13,8 +13,14 @@
 
   <target name="dita2googledoc"
           depends="build-init,preprocess2,dita2googledoc.init">
+    <path id="googledoc.class.path">
+      <path refid="dost.class.path"/>
+      <fileset dir="${dita.plugin.redhat.dita.googledoc.dir}/lib">
+        <include name="*.jar"/>
+      </fileset>
+    </path>
     <java classname="org.dita.googledoc.GoogleDocRenderer"
-          classpathref="dost.class.path"
+          classpathref="googledoc.class.path"
           failonerror="true"
           fork="true">
       <arg value="${dita.temp.dir}"/>
@@ -26,6 +32,15 @@
       <arg value="${googledoc.token.dir}"/>
       <arg value="${googledoc.image.max.width}"/>
     </java>
+
+    <loadfile property="googledoc.result.url"
+              srcFile="${dita.temp.dir}/googledoc-url.txt"
+              failonerror="false"/>
+    <echo if:set="googledoc.result.url">
+==============================================================
+ Google Doc ready:
+ ${googledoc.result.url}
+==============================================================</echo>
   </target>
 
 </project>

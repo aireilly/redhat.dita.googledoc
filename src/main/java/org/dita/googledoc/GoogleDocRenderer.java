@@ -101,7 +101,17 @@ public class GoogleDocRenderer {
             apiClient.executeBatchUpdate(docId, allRequests);
         }
 
-        System.out.println("Google Doc URL: https://docs.google.com/document/d/" + docId + "/edit");
+        String docUrl = "https://docs.google.com/document/d/" + docId + "/edit";
+        System.out.println("Google Doc URL: " + docUrl);
+
+        // Write the URL to temp so build.xml can echo it as a prominent
+        // banner at the very end of the build.
+        try {
+            java.nio.file.Files.writeString(
+                Path.of(tempDir, "googledoc-url.txt"), docUrl);
+        } catch (IOException e) {
+            System.err.println("WARNING: Could not write googledoc-url.txt: " + e.getMessage());
+        }
     }
 
     static String findResolvedMap(String tempDir, String inputMap) {
